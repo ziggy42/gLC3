@@ -1,6 +1,9 @@
 package main
 
-import "fmt"
+import (
+	"fmt"
+	"os"
+)
 
 // Registers
 const (
@@ -99,7 +102,13 @@ func updateFlags(r uint16) {
 }
 
 func main() {
-	err := Load(&MEMORY, "hello-world.obj")
+	args := os.Args[1:]
+	if len(args) == 0 {
+		fmt.Println("Missing argument!")
+		os.Exit(1)
+	}
+
+	err := Load(&MEMORY, args[0])
 	if err != nil {
 		panic(err)
 	}
