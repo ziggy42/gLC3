@@ -7,7 +7,7 @@ import (
 
 // Registers
 const (
-	R_RO    = iota
+	R_R0    = iota
 	R_R1    = iota
 	R_R2    = iota
 	R_R3    = iota
@@ -134,6 +134,12 @@ func main() {
 			}
 
 			updateFlags(dr)
+		case OP_LD:
+			dr := (instruction >> 9) & 0x7
+			pcOffset := signExtend(instruction&0x1ff, 9)
+
+			REGISTERS[dr] = memRead(REGISTERS[R_PC] + pcOffset)
+			updateFlags(dr)
 		case OP_LDI:
 			dr := (instruction >> 9) & 0x7
 			pcOffset := signExtend(instruction&0x1ff, 9)
@@ -148,8 +154,10 @@ func main() {
 			updateFlags(dr)
 		case OP_TRAP:
 			switch instruction & 0xFF { // TODO why?
+			case TRAP_OUT:
+				fmt.Printf("%c", rune(REGISTERS[R_R0]))
 			case TRAP_PUTS:
-				i := REGISTERS[R_RO]
+				i := REGISTERS[R_R0]
 				for ; MEMORY[i] != 0; i++ {
 					fmt.Printf("%c", rune(MEMORY[i]))
 				}
