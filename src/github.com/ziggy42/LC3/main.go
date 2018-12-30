@@ -120,6 +120,12 @@ func main() {
 		REGISTERS[R_PC]++
 
 		switch op := instruction >> 12; op {
+		case OP_BR:
+			pcOffset := signExtend((instruction)&0x1ff, 9)
+			flag := (instruction >> 9) & 0x7
+			if flag&REGISTERS[R_COND] != 0 {
+				REGISTERS[R_PC] += pcOffset
+			}
 		case OP_ADD:
 			dr := (instruction >> 9) & 0x7
 			sr1 := (instruction >> 6) & 0x7
