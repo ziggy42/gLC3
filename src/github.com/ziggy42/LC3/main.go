@@ -1,6 +1,7 @@
 package main
 
 import (
+	"bufio"
 	"fmt"
 	"os"
 )
@@ -75,9 +76,24 @@ func memWrite(address uint16, value uint16) {
 	MEMORY[address] = value
 }
 
+func keyPressed() bool {
+	fi, _ := os.Stdin.Stat()
+	return fi.Size() > 0
+}
+
 func memRead(address uint16) uint16 {
 	if address == MR_KBSR {
-		// TODO
+		if keyPressed() {
+			MEMORY[MR_KBSR] = (1 << 15)
+			c, err := getChar()
+			if err != nil {
+				panic(err)
+			}
+
+			MEMORY[MR_KBDR] = c
+		} else {
+			MEMORY[MR_KBSR] = 0
+		}
 	}
 
 	return MEMORY[address]
@@ -99,6 +115,15 @@ func updateFlags(r uint16) {
 	} else {
 		REGISTERS[R_COND] = FL_POS
 	}
+}
+
+func getChar() (uint16, error) {
+	r := bufio.NewReader(os.Stdin)
+	b, err := r.ReadByte()
+	if err != nil {
+		return 0, err
+	}
+	return uint16(b), nil
 }
 
 func main() {
@@ -146,12 +171,70 @@ func main() {
 
 			REGISTERS[dr] = memRead(REGISTERS[R_PC] + pcOffset)
 			updateFlags(dr)
+		case OP_ST:
+			sr := (instruction >> 9) & 0x7
+			pcOffset := signExtend(instruction&0x1ff, 9)
+			memWrite(REGISTERS[R_PC]+pcOffset, REGISTERS[sr])
+		case OP_JSR:
+			r := (instruction >> 6) & 0x7
+			longPcOffset := signExtend(instruction&0x7ff, 11)
+			longFlag := (instruction >> 11) & 1
+
+			REGISTERS[R_R7] = REGISTERS[R_PC]
+			if longFlag != 0 {
+				REGISTERS[R_PC] += longPcOffset
+			} else {
+				REGISTERS[R_PC] = REGISTERS[r]
+			}
+		case OP_AND:
+			dr := (instruction >> 9) & 0x7
+			sr1 := (instruction >> 6) & 0x7
+			mode := (instruction >> 5) & 0x1
+
+			if mode == MODE_IMMEDIATE {
+				imm5 := signExtend(instruction&0x1F, 5)
+				REGISTERS[dr] = REGISTERS[sr1] & imm5
+			} else {
+				sr2 := instruction & 0x7
+				REGISTERS[dr] = REGISTERS[sr1] & REGISTERS[sr2]
+			}
+
+			updateFlags(dr)
+		case OP_LDR:
+			dr := (instruction >> 9) & 0x7
+			sr1 := (instruction >> 6) & 0x7
+			offset := signExtend(instruction&0x3F, 6)
+			REGISTERS[dr] = memRead(REGISTERS[sr1] + offset)
+
+			updateFlags(dr)
+		case OP_STR:
+			sr1 := (instruction >> 9) & 0x7
+			sr2 := (instruction >> 6) & 0x7
+			offset := signExtend(instruction&0x3F, 6)
+			memWrite(REGISTERS[sr2]+offset, REGISTERS[sr1])
+		case OP_RTI:
+			panic("Unknown opcode")
+		case OP_NOT:
+			dr := (instruction >> 9) & 0x7
+			sr1 := (instruction >> 6) & 0x7
+
+			REGISTERS[dr] = ^REGISTERS[sr1]
+			updateFlags(dr)
 		case OP_LDI:
 			dr := (instruction >> 9) & 0x7
 			pcOffset := signExtend(instruction&0x1ff, 9)
 
 			REGISTERS[dr] = memRead(memRead(REGISTERS[R_PC] + pcOffset))
 			updateFlags(dr)
+		case OP_STI:
+			sr1 := (instruction >> 9) & 0x7
+			pcOffset := signExtend(instruction&0x1ff, 9)
+			memWrite(memRead(REGISTERS[R_PC]+pcOffset), REGISTERS[sr1])
+		case OP_JMP:
+			sr1 := (instruction >> 6) & 0x7
+			REGISTERS[R_PC] = REGISTERS[sr1]
+		case OP_RES:
+			panic("Unknown opcode")
 		case OP_LEA:
 			dr := (instruction >> 9) & 0x7
 			pcOffset := signExtend(instruction&0x1ff, 9)
@@ -159,7 +242,13 @@ func main() {
 			REGISTERS[dr] = REGISTERS[R_PC] + pcOffset
 			updateFlags(dr)
 		case OP_TRAP:
-			switch instruction & 0xFF { // TODO why?
+			switch instruction & 0xFF {
+			case TRAP_GETC:
+				c, err := getChar()
+				if err != nil {
+					panic(err)
+				}
+				REGISTERS[R_R0] = c
 			case TRAP_OUT:
 				fmt.Printf("%c", rune(REGISTERS[R_R0]))
 			case TRAP_PUTS:
@@ -167,12 +256,28 @@ func main() {
 				for ; MEMORY[i] != 0; i++ {
 					fmt.Printf("%c", rune(MEMORY[i]))
 				}
+			case TRAP_IN:
+				fmt.Print("Enter a character: ")
+				c, err := getChar()
+				if err != nil {
+					panic(err)
+				}
+				REGISTERS[R_R0] = c
+			case TRAP_PUTSP:
+				i := REGISTERS[R_R0]
+				for ; MEMORY[i] != 0; i++ {
+					r1 := rune(MEMORY[i] & 0xFF)
+					fmt.Printf("%c", r1)
+					r2 := rune(MEMORY[i] >> 8)
+					if r2 != 0 {
+						fmt.Printf("%c", r2)
+					}
+				}
 			case TRAP_HALT:
 				running = false
 			}
 		default:
-			fmt.Printf("Unknown OP %d\n", instruction)
-			running = false
+			panic("Unknown opcode")
 		}
 	}
 }
