@@ -93,14 +93,6 @@ func memRead(address uint16) uint16 {
 	return memory[address]
 }
 
-func signExtend(x uint16, bitCount uint) uint16 {
-	if ((x << (bitCount - 1)) & 1) > 0 { // TODO why not just x < 0?
-		x |= (0xFFFF << bitCount)
-	}
-
-	return x
-}
-
 func updateFlags(r uint16) {
 	if registers[r] == 0 {
 		registers[R_COND] = FL_ZRO
@@ -131,7 +123,7 @@ func main() {
 
 		switch op := instruction >> 12; op {
 		case OP_BR:
-			pcOffset := signExtend((instruction)&0x1ff, 9)
+			pcOffset := SignExtend((instruction)&0x1ff, 9)
 			flag := (instruction >> 9) & 0x7
 			if flag&registers[R_COND] != 0 {
 				registers[R_PC] += pcOffset
@@ -142,7 +134,7 @@ func main() {
 			mode := (instruction >> 5) & 0x1
 
 			if mode == MODE_IMMEDIATE {
-				immediate := signExtend(instruction&0x1F, 5)
+				immediate := SignExtend(instruction&0x1F, 5)
 				registers[dr] = registers[sr1] + immediate
 			} else {
 				sr2 := instruction & 0x7
@@ -152,17 +144,17 @@ func main() {
 			updateFlags(dr)
 		case OP_LD:
 			dr := (instruction >> 9) & 0x7
-			pcOffset := signExtend(instruction&0x1ff, 9)
+			pcOffset := SignExtend(instruction&0x1ff, 9)
 
 			registers[dr] = memRead(registers[R_PC] + pcOffset)
 			updateFlags(dr)
 		case OP_ST:
 			sr := (instruction >> 9) & 0x7
-			pcOffset := signExtend(instruction&0x1ff, 9)
+			pcOffset := SignExtend(instruction&0x1ff, 9)
 			memWrite(registers[R_PC]+pcOffset, registers[sr])
 		case OP_JSR:
 			r := (instruction >> 6) & 0x7
-			longPcOffset := signExtend(instruction&0x7ff, 11)
+			longPcOffset := SignExtend(instruction&0x7ff, 11)
 			longFlag := (instruction >> 11) & 1
 
 			registers[R_R7] = registers[R_PC]
@@ -177,7 +169,7 @@ func main() {
 			mode := (instruction >> 5) & 0x1
 
 			if mode == MODE_IMMEDIATE {
-				imm5 := signExtend(instruction&0x1F, 5)
+				imm5 := SignExtend(instruction&0x1F, 5)
 				registers[dr] = registers[sr1] & imm5
 			} else {
 				sr2 := instruction & 0x7
@@ -188,14 +180,14 @@ func main() {
 		case OP_LDR:
 			dr := (instruction >> 9) & 0x7
 			sr1 := (instruction >> 6) & 0x7
-			offset := signExtend(instruction&0x3F, 6)
+			offset := SignExtend(instruction&0x3F, 6)
 			registers[dr] = memRead(registers[sr1] + offset)
 
 			updateFlags(dr)
 		case OP_STR:
 			sr1 := (instruction >> 9) & 0x7
 			sr2 := (instruction >> 6) & 0x7
-			offset := signExtend(instruction&0x3F, 6)
+			offset := SignExtend(instruction&0x3F, 6)
 			memWrite(registers[sr2]+offset, registers[sr1])
 		case OP_RTI:
 			panic("Unknown opcode")
@@ -207,13 +199,13 @@ func main() {
 			updateFlags(dr)
 		case OP_LDI:
 			dr := (instruction >> 9) & 0x7
-			pcOffset := signExtend(instruction&0x1ff, 9)
+			pcOffset := SignExtend(instruction&0x1ff, 9)
 
 			registers[dr] = memRead(memRead(registers[R_PC] + pcOffset))
 			updateFlags(dr)
 		case OP_STI:
 			sr1 := (instruction >> 9) & 0x7
-			pcOffset := signExtend(instruction&0x1ff, 9)
+			pcOffset := SignExtend(instruction&0x1ff, 9)
 			memWrite(memRead(registers[R_PC]+pcOffset), registers[sr1])
 		case OP_JMP:
 			sr1 := (instruction >> 6) & 0x7
@@ -222,7 +214,7 @@ func main() {
 			panic("Unknown opcode")
 		case OP_LEA:
 			dr := (instruction >> 9) & 0x7
-			pcOffset := signExtend(instruction&0x1ff, 9)
+			pcOffset := SignExtend(instruction&0x1ff, 9)
 
 			registers[dr] = registers[R_PC] + pcOffset
 			updateFlags(dr)
