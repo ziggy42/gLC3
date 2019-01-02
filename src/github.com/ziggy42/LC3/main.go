@@ -1,7 +1,6 @@
 package main
 
 import (
-	"bufio"
 	"fmt"
 	"os"
 )
@@ -76,16 +75,11 @@ func memWrite(address uint16, value uint16) {
 	memory[address] = value
 }
 
-func keyPressed() bool {
-	fi, _ := os.Stdin.Stat()
-	return fi.Size() > 0
-}
-
 func memRead(address uint16) uint16 {
 	if address == MR_KBSR {
-		if keyPressed() {
+		if IsKeyPressed() {
 			memory[MR_KBSR] = (1 << 15)
-			c, err := getChar()
+			c, err := GetChar()
 			if err != nil {
 				panic(err)
 			}
@@ -115,15 +109,6 @@ func updateFlags(r uint16) {
 	} else {
 		registers[R_COND] = FL_POS
 	}
-}
-
-func getChar() (uint16, error) {
-	r := bufio.NewReader(os.Stdin)
-	b, err := r.ReadByte()
-	if err != nil {
-		return 0, err
-	}
-	return uint16(b), nil
 }
 
 func main() {
@@ -244,7 +229,7 @@ func main() {
 		case OP_TRAP:
 			switch instruction & 0xFF {
 			case TRAP_GETC:
-				c, err := getChar()
+				c, err := GetChar()
 				if err != nil {
 					panic(err)
 				}
@@ -258,7 +243,7 @@ func main() {
 				}
 			case TRAP_IN:
 				fmt.Print("Enter a character: ")
-				c, err := getChar()
+				c, err := GetChar()
 				if err != nil {
 					panic(err)
 				}
