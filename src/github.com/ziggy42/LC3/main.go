@@ -229,8 +229,7 @@ func main() {
 			case TRAP_OUT:
 				fmt.Printf("%c", rune(registers[R_R0]))
 			case TRAP_PUTS:
-				i := registers[R_R0]
-				for ; memory[i] != 0; i++ {
+				for i := registers[R_R0]; memory[i] != 0; i++ {
 					fmt.Printf("%c", rune(memory[i]))
 				}
 			case TRAP_IN:
