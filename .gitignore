@@ -1,3 +1,4 @@
 tooling/
 *.obj
 *.sym
+bin/
