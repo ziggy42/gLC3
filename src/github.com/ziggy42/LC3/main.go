@@ -107,11 +107,10 @@ func main() {
 	args := os.Args[1:]
 	if len(args) == 0 {
 		fmt.Println("Missing argument!")
-		os.Exit(1)
+		return
 	}
 
-	err := Load(&memory, args[0])
-	if err != nil {
+	if err := Load(&memory, args[0]); err != nil {
 		panic(err)
 	}
 
@@ -123,9 +122,10 @@ func main() {
 
 		switch op := instruction >> 12; op {
 		case OP_BR:
-			pcOffset := SignExtend((instruction)&0x1ff, 9)
+			pcOffset := SignExtend(instruction&0x1ff, 9)
 			flag := (instruction >> 9) & 0x7
-			if flag&registers[R_COND] != 0 {
+
+			if (flag & registers[R_COND]) != 0 {
 				registers[R_PC] += pcOffset
 			}
 		case OP_ADD:
