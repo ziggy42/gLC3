@@ -2,3 +2,4 @@ tooling/
 *.obj
 *.sym
 bin/
+LC3
