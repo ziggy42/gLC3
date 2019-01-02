@@ -1,18 +1,18 @@
 package main
 
 import (
-	"bufio"
 	"os"
+	"os/exec"
 )
 
 // GetChar reads one character from Stdin as an uint16
 func GetChar() (uint16, error) {
-	r := bufio.NewReader(os.Stdin)
-	b, err := r.ReadByte()
-	if err != nil {
-		return 0, err
-	}
-	return uint16(b), nil
+	exec.Command("stty", "-F", "/dev/tty", "cbreak", "min", "1").Run()
+	exec.Command("stty", "-F", "/dev/tty", "-echo").Run()
+
+	b := make([]byte, 1)
+	os.Stdin.Read(b)
+	return uint16(b[0]), nil
 }
 
 // IsKeyPressed checks if a key was pressed
