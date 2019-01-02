@@ -8,4 +8,4 @@ RUN unzip lc3tools_v12.zip
 
 RUN cd lc3tools && ./configure --installdir /opt && make && make install
 
-CMD /bin/bash
+ENTRYPOINT ["/lc3tools/lc3as"] 
