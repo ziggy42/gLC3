@@ -1,5 +1,8 @@
 # gLC3
 
+LC-3 VM written in Go.
+Inspired by [Write your Own Virtual Machine](https://justinmeiners.github.io/lc3-vm/index.html).
+
 ## Build
 ```bash
 export GOPATH=$(pwd)
