@@ -241,8 +241,7 @@ func main() {
 				}
 				registers[R_R0] = c
 			case TRAP_PUTSP:
-				i := registers[R_R0]
-				for ; memory[i] != 0; i++ {
+				for i := registers[R_R0]; memory[i] != 0; i++ {
 					r1 := rune(memory[i] & 0xFF)
 					fmt.Printf("%c", r1)
 					r2 := rune(memory[i] >> 8)
