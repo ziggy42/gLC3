@@ -5,6 +5,7 @@ import (
 	"os/exec"
 )
 
+// TODO this does not work well
 // GetChar reads one character from Stdin as an uint16
 func GetChar() (uint16, error) {
 	exec.Command("stty", "-F", "/dev/tty", "cbreak", "min", "1").Run()
